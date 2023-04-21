@@ -8,13 +8,9 @@ int main(int argc, char** argv)
 
     Zkey_t zkey = zkey::encode(x,y);
 
-    x = 100; 
-    y = 43242;
 
     zkey::decode(zkey, x, y);
 
-    std::cout << x << std::endl;
-    std::cout << y << std::endl;
 
 
 
