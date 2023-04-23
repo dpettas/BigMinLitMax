@@ -16,9 +16,13 @@ class BigMinLitMax
     public:
         BigMinLitMax() = delete;
         BigMinLitMax( Range_t xrange, Range_t yrange, Range_t zrange);
+        
+        Zkey_t bigmin( Zkey_t zval) const;
 
         Zkey_t zkey_min() const;
         Zkey_t zkey_max() const;
+
+        bool is_in_the_range( Zkey_t zval) const;
          
     private:
         uint32_t xmin;
