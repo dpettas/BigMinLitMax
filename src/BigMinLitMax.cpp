@@ -1,1 +1,28 @@
 #include "BigMinLitMax.hpp"
+#include "Zkey.hpp"
+
+BigMinLitMax::BigMinLitMax(Range_t xrange, Range_t yrange, Range_t zrange)
+{
+    xmin = xrange.left;
+    xmax = xrange.right;
+
+    ymin = yrange.left;
+    ymax = yrange.right;
+
+    zmin = zrange.left;
+    zmax = zrange.right;
+}
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+Zkey_t BigMinLitMax::zkey_min() const
+{
+    return zkey::encode(xmin, ymin, zmin);
+}
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+Zkey_t BigMinLitMax::zkey_max() const
+{
+    return zkey::encode(xmax, ymax, zmax);
+}

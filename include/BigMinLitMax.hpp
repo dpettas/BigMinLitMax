@@ -2,12 +2,24 @@
 #define BIGMINLITMAX_HPP
 
 #include <stdint.h>
-#include "Zkey.hpp"
+#include <Zkey.hpp>
 
 class BigMinLitMax
 {
+    public: 
+        struct Range_t
+        {
+            uint32_t left;
+            uint32_t right;
+        };
+        
     public:
-        BigMinLitMax() = default;
+        BigMinLitMax() = delete;
+        BigMinLitMax( Range_t xrange, Range_t yrange, Range_t zrange);
+
+        Zkey_t zkey_min() const;
+        Zkey_t zkey_max() const;
+         
     private:
         uint32_t xmin;
         uint32_t xmax;

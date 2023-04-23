@@ -1,20 +1,18 @@
 #include <iostream>
-#include <cstdio>
 #include "Zkey.hpp"
+#include "BigMinLitMax.hpp"
 
 int main(int argc, char** argv) 
 {
-    uint32_t x = 10;
-    uint32_t y = 1025;
-    uint32_t z = 21686;
+    auto search = BigMinLitMax({2,5}, {2,5}, {2,5});
 
-    Zkey_t zkey = zkey::encode(x,y, z);
+    std::cout << "-----\n";
+    std::cout << search.zkey_min() << std::endl;
+    std::cout << search.zkey_max() << std::endl;
+    std::cout << "-----\n";
+    
 
 
-    zkey::decode(zkey, x, y, z);
-
-
-    printf("%d %d %d\n", x, y, z);
 
 
 
