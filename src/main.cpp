@@ -6,7 +6,7 @@ int main(int argc, char** argv)
 {
     uint32_t x = 10;
     uint32_t y = 1025;
-    uint32_t z = 1123;
+    uint32_t z = 21686;
 
     Zkey_t zkey = zkey::encode(x,y, z);
 

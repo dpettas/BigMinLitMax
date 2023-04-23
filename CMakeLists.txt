@@ -3,6 +3,7 @@ project(bigminlitmax VERSION 0.1.0)
 
 set( SOURCES
     ./src/Zkey.cpp
+    ./src/BigMinLitMax.cpp
 )
 
 add_executable(bigminlitmax ./src/main.cpp ${SOURCES})
