@@ -12,8 +12,8 @@ namespace zkey
     void   decode( Zkey_t zkey, uint32_t& x, uint32_t& y);
 
 
-    Zkey_t encode(              uint32_t x, uint32_t y, uint32_t z);
-    void   decode( Zkey_t zkey, uint32_t x, uint32_t y, uint32_t z);
+    Zkey_t encode(              uint32_t  x, uint32_t  y, uint32_t  z);
+    void   decode( Zkey_t zkey, uint32_t& x, uint32_t& y, uint32_t& z);
 
 }
 
