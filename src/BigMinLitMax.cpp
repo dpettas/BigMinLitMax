@@ -2,31 +2,90 @@
 #include "Zkey.hpp"
 #include <stdexcept>
 #include <iostream>
+#include <bitset>
 
 namespace
 {
-    // 0b0100100100100100100100100100100100100100100100100100100100100100
-    // 0b0010010010010010010010010010010010010010010010010010010010010010
-    // 0b0001001001001001001001001001001001001001001001001001001001001001
-    // 0b0xyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyzxyz
+    int bitset_msb_position( Zkey_t key)
+    {
+        if(!key) return -1;
+
+        int msb = 0;
+        while (key) 
+        {
+            msb++;
+            key = key >> 1;
+        }
+        return msb - 1;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
+    void bitset_turn_on_bits( Zkey_t& key, uint32_t start, uint32_t stop, uint32_t step)
+    {
+        for(uint32_t pos = start; pos <= stop; pos += step)
+        {
+            Zkey_t on_bit = 0x1ul << (pos);
+            key |= on_bit;
+        }
+
+        return;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
+    void bitset_turn_off_bits( Zkey_t& key, uint32_t start, uint32_t stop, uint32_t step)
+    {
+        for(uint32_t pos = start; pos <= stop; pos += step)
+        {
+            Zkey_t on_bit = 0x1ul << (pos);
+            key &= ~on_bit;
+        }
+
+        return;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
+    void bitset_turn_on_bit( Zkey_t& key, uint32_t i)
+    {
+        key = key | (0x1ul << i);
+        return;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
+    void bitset_turn_off_bit( Zkey_t& key, uint32_t i)
+    {
+        key = key & (~(0x1ul << i));
+        return;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
+    Zkey_t bitset_set_ones(uint32_t start)
+    {
+        return (1ul<< (start+1)) - 1ul;
+    }
+    //////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////
+
     Zkey_t load_xxx10000( Zkey_t value, Zkey_t bit_pos)
     {
-        Zkey_t pattern_00010000 = bit_pos;
-        Zkey_t pattern_00001111 = pattern_00010000 - 1ul;
-        Zkey_t pattern_11110000 = ~pattern_00001111;
-
-        return (value | pattern_00010000) & pattern_11110000;
+        int pos = bitset_msb_position(bit_pos);
+        bitset_turn_off_bits(value, pos%2, pos, 2 );
+        bitset_turn_on_bit  (value, pos);
+        return value;
     }
     //////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////
 
     Zkey_t load_xxx01111( Zkey_t value, Zkey_t bit_pos)
     {
-        Zkey_t pattern_00010000 = bit_pos;
-        Zkey_t pattern_11101111 = ~pattern_00010000;
-        Zkey_t pattern_00001111 =  pattern_00010000 -1ul;
-
-        return (value & pattern_11101111) | pattern_00001111;
+        int pos = bitset_msb_position(bit_pos);
+        bitset_turn_on_bits( value, pos%2, pos, 2);
+        bitset_turn_off_bit( value, pos);
+        return value;
     }
 }
 //<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
@@ -34,30 +93,27 @@ namespace
 
 
 
-BigMinLitMax::BigMinLitMax(Range_t xrange, Range_t yrange, Range_t zrange)
+BigMinLitMax::BigMinLitMax(Range_t xrange, Range_t yrange)
 {
     xmin = xrange.left;
     xmax = xrange.right;
 
     ymin = yrange.left;
     ymax = yrange.right;
-
-    zmin = zrange.left;
-    zmax = zrange.right;
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::zkey_min() const
 {
-    return zkey::encode(xmin, ymin, zmin);
+    return zkey::encode(ymin, xmin);
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::zkey_max() const
 {
-    return zkey::encode(xmax, ymax, zmax);
+    return zkey::encode(ymax, xmax);
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -66,77 +122,57 @@ bool BigMinLitMax::is_in_the_range(Zkey_t zval) const
 {
     uint32_t x;
     uint32_t y;
-    uint32_t z;
-    
-    zkey::decode(zval, x,y,z);
 
+    zkey::decode(zval, y, x);
     return ((xmin <= x) && ( x <= xmax)) &&
-           ((ymin <= y) && ( y <= ymax)) &&
-           ((zmin <= z) && ( z <= zmax));
+           ((ymin <= y) && ( y <= ymax));
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::bigmin( Zkey_t zval) const
 {
-    Zkey_t bigmin = 0ul;
-    Zkey_t mask   = (1ul << 62);
+    Zkey_t bigmin    = 0ul;
     
-    Zkey_t zmin   = zkey_min();
-    Zkey_t zmax   = zkey_max();
+    Zkey_t zmin      = zkey_min();
+    Zkey_t zmax      = zkey_max();
 
-    int i  = 0;
-    while(mask)
+    Zkey_t bpos      = 0b1000000000000000000000000000000000000000000000000000000000000000;
+    
+    while(bpos)
     {
-        //-----------------------------------------------
-        Zkey_t bzmin = zmin & mask;
-        Zkey_t bzmax = zmax & mask;
-        Zkey_t bzval = zval & mask;
-        //-----------------------------------------------
+        Zkey_t bzval = zval & bpos;
+        Zkey_t bzmin = zmin & bpos;
+        Zkey_t bzmax = zmax & bpos;
 
-        bool case1 = !bzval && !bzmin && !bzmax;
-        bool case2 = !bzval && !bzmin &&  bzmax;
-        bool case3 = !bzval &&  bzmin && !bzmax;
-        bool case4 = !bzval &&  bzmin &&  bzmax;
-        bool case5 =  bzval && !bzmin && !bzmax;
-        bool case6 =  bzval && !bzmin &&  bzmax;
-        bool case7 =  bzval &&  bzmin && !bzmax;
-        bool case8 =  bzval &&  bzmin &&  bzmax;
-
-        if      ( case1 ) {}
-        else if ( case2 ) 
+        if( !bzval && !bzmin && !bzmax)
+        {}
+        else if( !bzval && !bzmin && bzmax)
         {
-            std::cout << "Case 2 :: " << i << std::endl;
-
-            bigmin = load_xxx10000( zmin, mask);
-            zmax   = load_xxx01111( zmax, mask);
+            bigmin = load_xxx10000(zmin, bpos);
+            zmax   = load_xxx01111(zmax, bpos);
+            
         }
-        else if ( case3 ) { throw std::logic_error("Not Possible"); }
-        else if ( case4 ) 
+        else if( !bzval && bzmin && bzmax)
         {
-            std::cout << "Case 4 :: " << i << std::endl;
             bigmin = zmin;
             break;
         }
-        else if ( case5 ) 
+        else if( bzval && !bzmin && !bzmax)
         {
-            std::cout << "Case 5 :: " << i << std::endl;
             break;
         }
-        else if ( case6 ) 
+        else if( bzval && !bzmin && bzmax)
         {
-            std::cout << "Case 6 :: " << i << std::endl;
-            zmin = load_xxx10000(zmin, mask);
-            std::cout << "                  " << zmin << std::endl;
+            zmin = load_xxx10000(zmin, bpos);
         }
-        else if ( case7 ) { throw std::logic_error("Not Possible");}
-        else if ( case8 ) {}
+        else if( bzval && bzmin && bzmax)
+        {
 
-        ++i;
-        mask >>= 1;
+        }
+
+        bpos >>= 1;
     }
-
-
 
     return bigmin;
 }
