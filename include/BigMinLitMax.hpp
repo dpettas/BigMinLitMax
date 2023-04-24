@@ -15,7 +15,7 @@ class BigMinLitMax
         
     public:
         BigMinLitMax() = delete;
-        BigMinLitMax( Range_t xrange, Range_t yrange);
+        BigMinLitMax( Range_t xrange, Range_t yrange, Range_t zrange);
         
         Zkey_t bigmin( Zkey_t zval) const;
 
@@ -30,6 +30,9 @@ class BigMinLitMax
 
         uint32_t ymin;
         uint32_t ymax;
+
+        uint32_t zmin;
+        uint32_t zmax;
 };
 
 
