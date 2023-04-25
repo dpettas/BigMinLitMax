@@ -75,6 +75,7 @@ namespace
         int pos = bitset_msb_position(bit_pos);
         bitset_turn_off_bits(value, pos%3, pos, 3 );
         bitset_turn_on_bit  (value, pos);
+
         return value;
     }
     //////////////////////////////////////////////////////////////////////////////
@@ -85,6 +86,7 @@ namespace
         int pos = bitset_msb_position(bit_pos);
         bitset_turn_on_bits( value, pos%3, pos, 3);
         bitset_turn_off_bit( value, pos);
+
         return value;
     }
 }
@@ -137,10 +139,25 @@ Zkey_t BigMinLitMax::bigmin( Zkey_t zval) const
 {
     Zkey_t bigmin    = 0ul;
     
+    // ---------------------------------------------------------------------------------------
+    // Calculate the min and max range
+    // ---------------------------------------------------------------------------------------
     Zkey_t zmin      = zkey_min();
     Zkey_t zmax      = zkey_max();
 
-    Zkey_t bpos      = 0b1000000000000000000000000000000000000000000000000000000000000000;
+    // ---------------------------------------------------------------------------------------
+    // Calculate the MSB position of the key
+    // ---------------------------------------------------------------------------------------
+    int msb = bitset_msb_position(zval);
+
+    // ---------------------------------------------------------------------------------------
+    // Traditionally, you need to start from the last one bit (a.k.a 63 in this case)
+    // However for optimization purposes we start from the most significant bit of the 
+    // key zval
+    // Zkey_t bpos      = 0b0100000000000000000000000000000000000000000000000000000000000000;
+    // ---------------------------------------------------------------------------------------
+
+    Zkey_t bpos = 0x1ul << (msb+1);
     
     while(bpos)
     {
@@ -148,31 +165,28 @@ Zkey_t BigMinLitMax::bigmin( Zkey_t zval) const
         Zkey_t bzmin = zmin & bpos;
         Zkey_t bzmax = zmax & bpos;
 
-        if( !bzval && !bzmin && !bzmax)
+        if     ( !bzval && !bzmin && !bzmax)
         {}
-        else if( !bzval && !bzmin && bzmax)
+        else if( !bzval && !bzmin &&  bzmax)
         {
             bigmin = load_xxx10000(zmin, bpos);
-            zmax   = load_xxx01111(zmax, bpos);
-            
+            zmax   = load_xxx01111(zmax, bpos);    
         }
-        else if( !bzval && bzmin && bzmax)
+        else if( !bzval &&  bzmin &&  bzmax)
         {
             bigmin = zmin;
             break;
         }
-        else if( bzval && !bzmin && !bzmax)
+        else if(  bzval && !bzmin && !bzmax)
         {
             break;
         }
-        else if( bzval && !bzmin && bzmax)
+        else if(  bzval && !bzmin &&  bzmax)
         {
             zmin = load_xxx10000(zmin, bpos);
         }
-        else if( bzval && bzmin && bzmax)
-        {
-
-        }
+        else if(  bzval &&  bzmin &&  bzmax)
+        {}
 
         bpos >>= 1;
     }
@@ -182,3 +196,62 @@ Zkey_t BigMinLitMax::bigmin( Zkey_t zval) const
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
+Zkey_t BigMinLitMax::litmax( Zkey_t zval) const
+{
+    Zkey_t litmax    = 0ul;
+    
+    // ---------------------------------------------------------------------------------------
+    // Calculate the min and max range
+    // ---------------------------------------------------------------------------------------
+    Zkey_t zmin      = zkey_min();
+    Zkey_t zmax      = zkey_max();
+
+    // ---------------------------------------------------------------------------------------
+    // Calculate the MSB position of the key
+    // ---------------------------------------------------------------------------------------
+    int msb = bitset_msb_position(zval);
+
+    // ---------------------------------------------------------------------------------------
+    // Traditionally, you need to start from the last one bit (a.k.a 63 in this case)
+    // However for optimization purposes we start from the most significant bit of the 
+    // key zval
+    // Zkey_t bpos      = 0b0100000000000000000000000000000000000000000000000000000000000000;
+    // ---------------------------------------------------------------------------------------
+
+    Zkey_t bpos = 0x1ul << (msb+1);
+    
+    while(bpos)
+    {
+        Zkey_t bzval = zval & bpos;
+        Zkey_t bzmin = zmin & bpos;
+        Zkey_t bzmax = zmax & bpos;
+
+        if     ( !bzval && !bzmin && !bzmax)
+        {}
+        else if( !bzval && !bzmin &&  bzmax)
+        {
+            zmax   = load_xxx01111(zmax, bpos);    
+        }
+        else if( !bzval &&  bzmin &&  bzmax)
+        {
+            break;
+        }
+        else if(  bzval && !bzmin && !bzmax)
+        {
+            litmax = zmax;
+            break;
+        }
+        else if(  bzval && !bzmin &&  bzmax)
+        {
+            litmax = load_xxx01111(zmax, bpos);
+            zmin   = load_xxx10000(zmin, bpos);
+        }
+        else if(  bzval &&  bzmin &&  bzmax)
+        {}
+
+        bpos >>= 1;
+    }
+
+    return litmax;
+
+}

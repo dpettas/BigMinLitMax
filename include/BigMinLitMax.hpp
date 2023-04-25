@@ -18,6 +18,7 @@ class BigMinLitMax
         BigMinLitMax( Range_t xrange, Range_t yrange, Range_t zrange);
         
         Zkey_t bigmin( Zkey_t zval) const;
+        Zkey_t litmax( Zkey_t zval) const;
 
         Zkey_t zkey_min() const;
         Zkey_t zkey_max() const;
