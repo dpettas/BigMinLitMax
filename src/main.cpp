@@ -18,48 +18,17 @@ int main(int argc, char** argv)
 
 
 
-    auto search = BigMinLitMax({xmin, xmax}, 
-                               {xmin, xmax},
-                               {xmin, xmax});
+    auto search = BigMinLitMax({3, 5}, 
+                               {5, 10});
 
+    std::cout <<  search.bigmin(58) << std::endl;
+    std::cout <<  search.litmax(58) << std::endl;
 
-    double time = 
-    Timer(
-        [&]()
-        {
-            for(uint32_t key = search.zkey_min()+1; key < search.zkey_max(); ++key)
-            {
-                Zkey_t bigmin = search.bigmin(key);
-                Zkey_t litmax = search.litmax(key);
-                
-                if( !search.is_in_the_range(bigmin) )
-                {
-                    std::cout << "Error in bigmin calculation\n";
-                    std::cout << "Case :: " << key - search.zkey_min() << std::endl;
-                    std::cout << "zmin :: " << search.zkey_min() << std::endl;
-                    std::cout << "zmax :: " << search.zkey_max() << std::endl;
-                    std::cout << "key  :: " << key << std::endl;
-                    exit(1);
-                }
-
-                if( !search.is_in_the_range(litmax) )
-                {
-                    std::cout << "Error in litmax calculation\n";
-                    std::cout << "Case :: " << key - search.zkey_min() << std::endl;
-                    std::cout << "zmin :: " << search.zkey_min() << std::endl;
-                    std::cout << "zmax :: " << search.zkey_max() << std::endl;
-                    std::cout << "key  :: " << key << std::endl;
-                    exit(1);
-                }
-
-                std::cout << bigmin << " " << litmax << std::endl;
-            }
-        }
-    ,1).duration();
-
-
-    std::cout << time << std::endl;
-
+    Zkey_t bmin; 
+    Zkey_t lmax;
+    search.bigmin_litmax(58, bmin, lmax);
+    std::cout << bmin << std::endl;
+    std::cout << lmax << std::endl;
 
 
 
