@@ -11,7 +11,7 @@ namespace
     Zkey_t load_xxx10000( Zkey_t value, Zkey_t bit_pos)
     {
         int pos = bitset_msb_position(bit_pos);
-        bitset_turn_off_bits(value, pos%2, pos, 2 );
+        bitset_turn_off_bits(value, pos%3, pos, 3 );
         bitset_turn_on_bit  (value, pos);
 
         return value;
@@ -22,7 +22,7 @@ namespace
     Zkey_t load_xxx01111( Zkey_t value, Zkey_t bit_pos)
     {
         int pos = bitset_msb_position(bit_pos);
-        bitset_turn_on_bits( value, pos%2, pos, 2);
+        bitset_turn_on_bits( value, pos%3, pos, 3);
         bitset_turn_off_bit( value, pos);
 
         return value;
@@ -31,27 +31,34 @@ namespace
 //<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 //<><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
-BigMinLitMax::BigMinLitMax(Range_t xrange, Range_t yrange)
+BigMinLitMax::BigMinLitMax(Range_t xrange, Range_t yrange, Range_t zrange)
 {
     xmin = xrange.left;
     xmax = xrange.right;
 
     ymin = yrange.left;
     ymax = yrange.right;
+
+    zmin = zrange.left;
+    zmax = zrange.right;
+
+
+    z_min = zkey::encode(zmin, ymin, xmin);
+    z_max = zkey::encode(zmax, ymax, xmax);
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::zkey_min() const
 {
-    return zkey::encode(ymin, xmin);
+    return z_min;
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::zkey_max() const
 {
-    return zkey::encode(ymax, xmax);
+    return z_max;
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -60,10 +67,12 @@ bool BigMinLitMax::is_in_the_range(Zkey_t zval) const
 {
     uint32_t x;
     uint32_t y;
+    uint32_t z;
 
-    zkey::decode(zval, y, x);
+    zkey::decode(zval, z, y, x);
     return ((xmin <= x) && ( x <= xmax)) &&
-           ((ymin <= y) && ( y <= ymax));
+           ((ymin <= y) && ( y <= ymax)) &&
+           ((zmin <= z) && ( z <= zmax));
 }
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
@@ -126,8 +135,6 @@ Zkey_t BigMinLitMax::bigmin( Zkey_t zval) const
 
     return bigmin;
 }
-//////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////
 
 Zkey_t BigMinLitMax::litmax( Zkey_t zval) const
 {
@@ -191,7 +198,7 @@ Zkey_t BigMinLitMax::litmax( Zkey_t zval) const
 //////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////
 
-void   BigMinLitMax::bigmin_litmax( Zkey_t zval, Zkey_t& bigmin, Zkey_t& litmax)
+void   BigMinLitMax::bigmin_litmax( Zkey_t zval, Zkey_t& bigmin, Zkey_t& litmax) const
 {
     litmax    = 0ul;
     bigmin    = 0ul;
@@ -251,4 +258,49 @@ void   BigMinLitMax::bigmin_litmax( Zkey_t zval, Zkey_t& bigmin, Zkey_t& litmax)
     }
 
     return;
+}
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+Zkey_t BigMinLitMax::next_of (Zkey_t zval) const
+{
+    if(zval < z_min || zval >= z_max){
+        return end();
+    }
+    
+    int num_attemts = 3;
+    int attempts    = 0;
+
+    while(true)
+    {
+        zval++;
+        attempts++;
+        if( is_in_the_range(zval)  ) return zval;
+        if( attempts == num_attemts) break;
+    }
+
+    // compute bigmin
+    return bigmin(zval);
+}
+//////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+Zkey_t BigMinLitMax::prev_of (Zkey_t zval) const
+{
+    if(zval <= z_min || zval > z_max){
+        return end();
+    }
+
+    int num_attemts = 3;
+    int attempts    = 0;
+
+    while(true)
+    {
+        zval--;
+        attempts++;
+        if( is_in_the_range(zval)  ) return zval;
+        if( attempts == num_attemts) break;
+    }
+
+    return litmax(zval);
 }
